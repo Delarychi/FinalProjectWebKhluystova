@@ -1,0 +1,33 @@
+.mainMap {
+    height: 500px;
+}
+
+.mainBody{
+    background-color: rgb(246, 209, 164); 
+    color: rgb(100, 100, 100);
+}
+
+.logotype{
+    width: 50px;
+}
+
+.info-table{
+    border: #a12312;
+    background: none;
+    color: rgb(100, 100, 100);
+}
+
+.main-info{
+    margin-top: 20px;
+    background-color: rgba(226, 189, 144);
+}
+
+.alert{
+    border: thick double #3EB489;
+    margin-top: 20px;
+    width: 20%;
+}
+
+.application{
+    border: thick double #a12312;
+}
