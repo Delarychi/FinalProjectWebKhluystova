@@ -16,7 +16,7 @@
     <nav class="navbar navbar-expand-lg navbar-light justify-content-between">
       <div class="container">
         <a class="navbar-brand" href="#">
-          <img src="images/logo.png" style="width: 50px;" class="logotype" alt="Логотип" class="me-2">
+          <img src="images/logo.png" style="width: 50px;" class="me-2 logotype" alt="Логотип">
           Туры по Москве
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -25,10 +25,10 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto mx-2">
-            <li class="nav-item">
+            <li class="nav-item aсtive-link">
               <a class="nav-link" href="#tour">Экскурсии</a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item aсtive-link">
               <a class="nav-link" href='homepage.html'>Личный кабинет</a>
             </li>
           </ul>
@@ -39,7 +39,7 @@
   <main>
     <div class="container">
       <div class="alertss">
-        <div class="alert" alert-primary alert-dismissible>
+        <div class="alert alert-primary alert-dismissible">
           0 новых сообщений
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -51,7 +51,7 @@
           <img class="w-50" src="images/logo2.png"  alt="img company">
         </div> 
         <div class="col-12 col-lg-6 text-center my-5">
-          <h1>Компания MosExspro</h1>
+          <h2>Компания MosExspro</h2>
           <p>Компания MosExspro занимается поиском и проведением экскурсий по Москве на 
             разных языках. Мы можем предложить вам посетить самые популярные маршруты 
             в удобное для вас время с 9:00 до 23:00, работаем даже в выходные и по праздникам.
@@ -64,7 +64,7 @@
       <div class="row mt-4">
         <div class="col-md">
           <img src="images/marker3.png" style="width: 70px;" alt="marker">
-          </svg><br> 
+          <br> 
           <h4><strong>Проведенные экскурсии</strong></h4>
           <p>За 2023 год мы провели <strong>около 10.000 экскурсий</strong> с самыми 
             разнообразными маршрутами, которые посетили туристы 
@@ -72,7 +72,7 @@
         </div>
         <div class="col-md">
           <img src="images/marker2.png" style="width: 70px;" alt="marker">
-          </svg><br> 
+          <br> 
           <h4><strong>Экскурсоводы</strong></h4>
           <p>Наши экскурсоводы - настоящие специалисты своего дела,
             они обладают обширными знаниями по краеведению, истории и искусству. 
@@ -82,7 +82,7 @@
         </div>
         <div class="col-md">
           <img src="images/marker1.png" style="width: 70px;" alt="marker">
-          </svg><br> 
+          <br> 
           <h4><strong>Маршруты</strong></h4>
           <p>Количество наших <strong>маршрутов</strong> к концу 2023 года 
             стало равно <strong>67</strong>, и мы продолжаем увеличивать их количество, чтобы 
@@ -99,18 +99,17 @@
       <form class="mb-3" onsubmit="searchRoutes()">
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label for="routeNameInput" class="form-label">Название маршрута</label> <!--забирать ввод-->
+            <label for="routeNameInput" class="form-label">Название маршрута</label>
             <input type="text" class="form-control" id="routeNameInput" placeholder="Введите название маршрута">
         </div>
         <div class="col-md-6 mb-3">
           <label for="mainObjectSelect" class="form-label">Выберите объект</label>
           <select class="form-control" id="mainObjectSelect">
             <option value="" disabled selected>Выберите основную достопримечательность</option>
-              <!--ввести значения для чекбокса-->
           </select>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary">Найти маршрут</button> <!--настроить поиск-->
+      <button type="submit" class="btn btn-primary">Найти маршрут</button> 
       <button type="button" class="btn btn-secondary" onclick="resetSearch()">Сбросить</button>
     </form>
     <table class="table table-bordered table-striped text-center info-table">
@@ -131,15 +130,15 @@
       <div class="selected-route">
       </div>
       <div class="row">
-          <div class="col-6 col-lg-4">
-              <select name="guide-lang" id="selectedLanguge">
+          <div class="col-6 col-lg-4 ">
+              <select name="guide-lang" id="selectedLanguge" class="option">
                   <option value="">Язык экскурсии</option>
               </select>
           </div>
           <div class="col-6 col-lg-4">
               Опыт работы:
-              <input type="number" id="guideFromExperiense" placeholder="от" class="w-25">
-              <input type="number" id="guideToExperiense" placeholder="до" class="w-25">
+              <input type="number" id="guideFromExperiense" placeholder="от" class="option w-25">
+              <input type="number" id="guideToExperiense" placeholder="до" class="option w-25">
           </div>
       </div>
       <table class="table table-bordered mt-3 info-table">
@@ -163,7 +162,7 @@
     <p>Почта: Khluystova@mail.ru</p>
   </footer>
   <div id="orderModal" class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg application">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
         <div class="modal-header">
           <h1 class="modal-title fs-5" id="showModalLabel">Отправить заявку</h1>
@@ -231,7 +230,7 @@
                 <div class="col-11">
                   <label for="isStudent" class="form-label">
                     <strong>Скидка для школьников и студентов</strong>
-                    <p>Скидка предоставляется только для школьников и студентов. </p>
+                    <p>Скидка предоставляется только для школьников и студентов.</p>
                     <p class='text-danger'>-15 %</p>
                   </label>
                 </div>
@@ -241,7 +240,7 @@
                   <input id="isTransport" type="checkbox" />
                 </div>
                 <div class="col-11">
-                  <label for="isTransport"class="form-label">
+                  <label for="isTransport" class="form-label">
                     <strong>Трансфер до ближайших станций метро после экскурсии. </strong>
                     <p>Увеличивает стоимость на
                       25% в выходные дни и на 30% в будние.</p>
