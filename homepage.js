@@ -8,18 +8,17 @@ const HOLIDAYS = [
 
 let routesData;
 let filteredRoutes;
+let guide;
 
 const itemsPerPage = 5;
 let currentPage = 1;
 
 const editModal = document.getElementById('editModal');
-
 const dateField = editModal.querySelector('#orderDate');
 const timeField = editModal.querySelector('#startTime');
 const durationField = editModal.querySelector('#orderDuration');
 const personsField = editModal.querySelector('#personsCount');
 const priceField = editModal.querySelector('#price');
-
 const studentField = editModal.querySelector('#isStudent');
 const transportField = editModal.querySelector('#isTransport');
 
@@ -28,13 +27,11 @@ function isThisDayOff(dateString) { // высчитывает день неде�
     let date = new Date(dateString);
     let day = date.getDay();
     let MonthDay = (date.getMonth() + 1) + '-' + date.getDate();
-    if (day === 0 || day === 6) { // 0 - воскресенье, 6 - суббота
+    if (day === 0 || day === 6 || HOLIDAYS.includes(MonthDay)) {
         return 1.5; 
-    } else if (holidaysArray.includes(MonthDay)) {
-        return 1.5;
-    } else {
-        return 1;
     }
+
+    return 1;
 }
 
 function getTimeExtra(startTime) { // высчитывает время начала
@@ -50,115 +47,45 @@ function getTimeExtra(startTime) { // высчитывает время нача
     return 0;
 }
 
-function calculateCost(guideCost, duration, // высчитывает общую сумму
-    date, startTime, 
-    personsNumber, students, transport
-) {
+function calculateCost(guideCost, duration, date, startTime, 
+    personsNumber, students, transport) { // высчитывает общую сумму
     let price = guideCost * duration * isThisDayOff(date);
-    if (personsNumber > 10 && personsNumber <= 20) {
-        price += 1500;
-    } else if (personsNumber > 5 && personsNumber <= 10) {
-        price += 1000;
-    }
-
-    if (transport && isThisDayOff(dateString) === 1.5) {
+    price += personsNumber > 5 && personsNumber <= 10 ? 1000 : 0;
+    price += personsNumber > 10 && personsNumber <= 20 ? 1500 : 0;
+    if (transport && (isThisDayOff(date) == 1.5)){
         price *= 1.25;
-    } else {
+    } else if (transport && (isThisDayOff(date) == 1)){
         price *= 1.3;
     }
-
-    if (students) {
-        price *= 0.85;
-    }
-
+    price *= students ? 0.85 : 1;
     return Math.floor(price);
 }
 
-function calculateOrderCost() {
+function calculateOrderCost() { // выводит общую сумму
+    
     const date = dateField.value;
     const time = timeField.value;
-    const duration = durationField.value;
     const persons = personsField.value;
-                     
+    const duration = durationField.value;
     const student = studentField.checked;
     const transport = transportField.checked;
-
-    const cost = calculateCost(editModal.guide.pricePerHour, duration, date,
+ 
+    const cost = calculateCost(guide.pricePerHour, duration, date, // подумать как подтянуть гида и маршрут(нужна хелпа)
         time, persons, student, transport);
+    priceField.textContent = cost + ' рублей.';
 
-    priceField.textContent = cost + ' руб.';
                                   
     return cost;
 }
 
-function fetchOrdersFromApi() {
-    fetch(
-        `${HOST}/api/orders?api_key=${API_KEY}`
-    )
-        .then(response => response.json())
-        .then(data => {
-            routesData = data;
-            updateTable();
-        })
-        .catch(error => console.error('Error fetching route data:', error));
-}
-
-function clearTable() {
+function clearTable() { // очистка таблицы
     const tableBody = document.getElementById('ordersTable');
     tableBody.innerHTML = '';
 }
 
-function handlePageClick(pageNumber) {
-    currentPage = pageNumber;
-    updateTable();
-}
-
-function updateModal(order, route, guide) {
-    editModal.guide = guide;
-
-    editModal.querySelector('#routeName').value = route.name;
-    editModal.querySelector('#guideFullName').value = guide.name;
-    dateField.value = order.date;
-    timeField.value = order.time;
-    durationField.value = order.duration;
-    personsField.value = order.persons
-    priceField.textContent = order.price + ' руб.';
-
-    studentField.checked = order.optionFirst;
-    transportField.checked = order.optionSecond;
-
-    editModal.querySelector('#sendData').onclick = async () => {
-        const formData = new FormData();
-
-        formData.append("id", order.id);
-        formData.append("date", dateField.value);
-        formData.append("time", timeField.value);
-        formData.append("duration", durationField.value);
-        formData.append("persons", personsField.value);
-        formData.append("price", calculateOrderCost());
-        formData.append("optionFirst", Number(studentField.checked));
-        formData.append("optionSecond", Number(transportField.checked));
-
-        console.log(formData)
-
-        const requestOptions = {
-            method: 'PUT',
-            body: formData,
-            redirect: 'follow'
-        };
-
-        const guide = await fetch(
-            `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
-            requestOptions
-        ).then(response => response.json()); 
-
-        fetchOrdersFromApi();
-    };
-}
-
-async function addRoutesToTable(orders) {
+async function addRoutesToTable(orders) { // добавление, просмотр и удаление данных в таблице
     const tableBody = document.getElementById('ordersTable');
-  
+    console.log(orders); 
     orders.forEach(async (order) => {
         const route = await fetch(
             `${HOST}/api/routes/${order.route_id}?api_key=${API_KEY}`
@@ -174,69 +101,53 @@ async function addRoutesToTable(orders) {
         row.insertCell(2).innerHTML = order.date;
         row.insertCell(3).innerHTML = order.price;
 
-        const buttons = document.getElementById('orderButtons')
-            .cloneNode(true);
-
+        const buttons = document.getElementById('orderButtons').cloneNode(true);
         const viewModal = document.querySelector('#viewModal');
         const editModal = document.querySelector('#editModal');
         const deleteModal = document.querySelector('#deleteModal');
 
         row.insertCell(4).appendChild(buttons);
 
-        buttons.classList.remove('d-none');
-        buttons.querySelector('#viewOrderButton').addEventListener(
-            'click',
-            () => {
+        buttons.classList.remove('none');
+        buttons.querySelector('#viewOrderButton').addEventListener('click', () => {
                 viewModal.querySelector('#routeName').value = route.name;
                 viewModal.querySelector('#guideFullName').value = guide.name;
                 viewModal.querySelector('#orderDate').value = order.date;
                 viewModal.querySelector('#startTime').value = order.time;
-                viewModal.querySelector(
-                    '#orderDuration'
-                ).value = order.duration;
+                viewModal.querySelector('#orderDuration').value = order.duration;
                 viewModal.querySelector('#personsCount').value = order.persons;
 
                 const all = document.getElementById('additionsBlock');
                 const first = document.getElementById('firstAddition');
                 const second = document.getElementById('secondAddition');
 
-                all.classList.remove("d-none");
-                first.classList.remove("d-none");
-                second.classList.remove("d-none");
+                all.classList.remove("none");
+                first.classList.remove("none");
+                second.classList.remove("none");
 
                 if (!order.optionFirst && !order.optionSecond) {
-                    all.classList.add("d-none");
+                    all.classList.add("none");
                 } else if (!order.optionFirst) {
-                    first.classList.add("d-none");
+                    first.classList.add("none");
                 } else if (!order.optionSecond) {
-                    second.classList.add("d-none");
+                    second.classList.add("none");
                 }
 
-                viewModal.querySelector(
-                    '#personsCount'
-                ).textContent = order.price + ' руб.';
+                viewModal.querySelector('#price').textContent = order.price + ' рублей.';
             },
         );
-        buttons.querySelector('#editOrderButton').addEventListener(
-            'click',
-            () => { 
+        buttons.querySelector('#editOrderButton').addEventListener('click', () => { 
                 updateModal(order, route, guide);
             },
         );
-        buttons.querySelector('#deleteOrderButton').addEventListener(
-            'click',
-            () => {
+        buttons.querySelector('#deleteOrderButton').addEventListener('click', () => {
                 deleteModal.onclick = async () => {
                     const requestOptions = {
                         method: 'DELETE',
                         redirect: 'follow'
                     };
 
-                    const guide = await fetch(
-                        `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
-                        requestOptions
-                    ).then(response => response.json()); 
-
+                    const guide = await fetch(`${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,requestOptions).then(response => response.json()); 
                     fetchOrdersFromApi();
                 };
             }
@@ -244,22 +155,48 @@ async function addRoutesToTable(orders) {
     });
 }
 
-function createPaginationItem(text, pageNumber) {
+function updateTable() {// обновление таблицы после изменений
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentRoutes = filteredRoutes ?
+        filteredRoutes.slice(startIndex, endIndex) :
+        routesData.slice(startIndex, endIndex);
+  
+    clearTable();
+    addRoutesToTable(currentRoutes);
+    updatePagination();
+}
+
+function fetchOrdersFromApi() {
+    fetch(
+        `${HOST}/api/orders?api_key=${API_KEY}`
+    )
+        .then(response => response.json())
+        .then(data => {
+            routesData = data;
+            updateTable();
+        })
+        .catch(error => console.error('Error fetching route data:', error));
+}
+
+function createPaginationItem(text, pageNumber) {// создает строку с номерами для пагинации
     const pageItem = document.createElement('li');
-    pageItem.className = 'page-item';
+    pageItem.className = 'page-item my-pagination';
   
     const pageLink = document.createElement('a');
-    pageLink.className = 'page-link';
+    pageLink.className = 'page-link my-link';
     pageLink.href = 'javascript:void(0)';
     pageLink.innerText = text;
   
     if (
-        (text === 'Предыдущий' && currentPage === 1) ||
-        (text === 'Следующий' && 
+        (text === 'Назад' && currentPage === 1) ||
+        (text === 'Вперед' && 
             currentPage === Math.ceil((filteredRoutes ? 
                 filteredRoutes.length : routesData.length) / itemsPerPage)
         )) {
         pageItem.classList.add('disabled');
+        pageItem.classList.remove('my-pagination');
+        pageItem.classList.add('my-pagination');
         pageLink.addEventListener('click', (e) => {
             e.preventDefault();
             handlePageClick(pageNumber);
@@ -277,14 +214,14 @@ function createPaginationItem(text, pageNumber) {
     return pageItem;
 }
 
-function updatePagination() {
+function updatePagination() {// обновлении таблицы на основе пагинации
     const paginationElement = document.getElementById('pagination');
     const totalPages = Math.ceil((filteredRoutes ? filteredRoutes.length :
         routesData.length) / itemsPerPage);
   
     paginationElement.innerHTML = '';
   
-    const prevItem = createPaginationItem('Предыдущий', currentPage - 1);
+    const prevItem = createPaginationItem('Назад', currentPage - 1);
     paginationElement.appendChild(prevItem);
   
     for (let i = 1; i <= totalPages; i++) {
@@ -292,29 +229,17 @@ function updatePagination() {
         paginationElement.appendChild(pageItem);
     }
   
-    const nextItem = createPaginationItem('Следующий', currentPage + 1);
+    const nextItem = createPaginationItem('Вперед', currentPage + 1);
     paginationElement.appendChild(nextItem);
 }
 
-function updateTable() {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentRoutes = filteredRoutes ?
-        filteredRoutes.slice(startIndex, endIndex) :
-        routesData.slice(startIndex, endIndex);
-  
-    clearTable();
-    addRoutesToTable(currentRoutes);
-    updatePagination();
-}
-
-function updatePaginationAfterSearch(filteredRoutes) {
+function updatePaginationAfterSearch(filteredRoutes) {// обновляет элементы пагинации на основе фильтрации
     const paginationElement = document.getElementById('pagination');
     const totalPages = Math.ceil(filteredRoutes.length / itemsPerPage);
   
     paginationElement.innerHTML = '';
   
-    const prevItem = createPaginationItem('Предыдущий', currentPage - 1);
+    const prevItem = createPaginationItem('Назад', currentPage - 1);
     paginationElement.appendChild(prevItem);
   
     for (let i = 1; i <= totalPages; i++) {
@@ -322,108 +247,55 @@ function updatePaginationAfterSearch(filteredRoutes) {
         paginationElement.appendChild(pageItem);
     }
   
-    const nextItem = createPaginationItem('Следующий', currentPage + 1);
+    const nextItem = createPaginationItem('Вперед', currentPage + 1);
     paginationElement.appendChild(nextItem);
 }
 
-function highlightSearchResult(searchKeyword) {
-    const tableBody = document.getElementById('ordersTable');
-    const rows = tableBody.getElementsByTagName('tr');
-  
-    for (let i = 0; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName('td');
-        const nameCell = cells[0];
-
-        const cellValue = nameCell.innerText;
-
-        const lowerCaseCellValue = cellValue.toLowerCase();
-        const lowerCaseSearchKeyword = searchKeyword.toLowerCase();
-  
-        if (lowerCaseCellValue.includes(lowerCaseSearchKeyword)) {
-            const startIndex = lowerCaseCellValue
-                .indexOf(lowerCaseSearchKeyword);
-
-            const endIndex = startIndex + searchKeyword.length; 
-            const highlightedText = cellValue.substring(0, startIndex) +
-                `<span class="search-highlight">${
-                    cellValue.substring(startIndex, endIndex)}</span>` +
-            cellValue.substring(endIndex);
-  
-            nameCell.innerHTML = highlightedText;
-        }
-    }
-}
-
-function searchRoutes() { 
-    filteredRoutes = routesData;
- 
-    const limitedRoutes = filteredRoutes.slice(0, itemsPerPage);
-  
-    clearTable();
-    addRoutesToTable(limitedRoutes);
-    updatePaginationAfterSearch(filteredRoutes);
-    highlightSearchResult(searchKeyword);
-}
-  
-function resetSearch() {
-    document.getElementById('routeNameInput').value = '';
-    document.getElementById('mainObjectSelect').value = '';
-    filteredRoutes = null;
+function handlePageClick(pageNumber) { // вызывает разные значения в соответствии со страницей
+    currentPage = pageNumber;
     updateTable();
 }
 
-function guideOptions() {
-    let list = document.querySelectorAll('.guide-table tr');
-    let from = Number(document.getElementById('guide-input-expfrom').value);
-    let to = Number(document.getElementById('guide-input-expto').value);
-    for (let i in list) {
-        if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
-        (to == 0 || to >= list[i].cells[3].innerHTML) &&
-        (document.getElementById('select_language')
-            .options[document.getElementById('select_language').selectedIndex]
-            .innerHTML == 'Язык экскурсии' ||
-        document.getElementById('select_language')
-            .options[document.getElementById('select_language').selectedIndex]
-            .innerHTML == list[i].cells[2].innerHTML)) {
+function updateModal(order, route, guide) { // изменение заявки
+    editModal.guide = guide;
 
-            list[i].classList.remove('d-none');
-        } else {
-            list[i].classList.add('d-none');
-        }
-    }
-}
+    editModal.querySelector('#routeName').value = route.name;
+    editModal.querySelector('#guideFullName').value = guide.name;
+    dateField.value = order.date;
+    timeField.value = order.time;
+    durationField.value = order.duration;
+    personsField.value = order.persons
+    priceField.textContent = order.price + ' рублей.';
 
-function getoptionforselect(q) {
-    return [... new Set(q)];    
-}
+    studentField.checked = order.optionFirst;
+    transportField.checked = order.optionSecond;
 
-function removeOptions(selectElement) {
-    let i, L = selectElement.options.length - 1;
-    for (i = L; i >= 0; i--) {
-        selectElement.remove(i);
-    }
-    const selects = document.getElementById('select_language');
-    let option = document.createElement('option');
-    option.value = '';
-    option.innerHTML = 'Язык экскурсии';
-    selects.appendChild(option);
-}  
+    editModal.querySelector('#sendData').onclick = async () => {
+        const formData = new FormData();
 
-function clickHandler(event) {
-    const screen = document.querySelector('.screen');
-    const target = event.target;
-    const row = document.querySelectorAll('th');
-    let id = 0;
-    if (target.classList.contains('choose')) {
-        for (let i = 6; i < row.length; i++) {
-            if (target.id == row[i].id) {
-                row[i].classList.add('table-success');
-                id = row[i].getAttribute('name');
-            } else {
-                row[i].classList.remove('table-success');
-            }
-        }
-    }
+        formData.append("id", order.id);
+        formData.append("date", dateField.value);
+        formData.append("time", timeField.value);
+        formData.append("duration", durationField.value);
+        formData.append("persons", personsField.value);
+        formData.append("price", calculateOrderCost());
+        formData.append("optionFirst", Number(studentField.checked));
+        formData.append("optionSecond", Number(transportField.checked));
+
+        const requestOptions = {
+            method: 'PUT',
+            body: formData,
+            redirect: 'follow'
+        };
+        console.log(formData);
+
+        const guide = await fetch(
+            `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
+            requestOptions
+        ).then(response => response.json()); 
+
+        fetchOrdersFromApi();
+    };
 }
 
 window.onload = function() {
@@ -434,6 +306,5 @@ window.onload = function() {
     priceField.addEventListener('change', calculateOrderCost); 
     studentField.addEventListener('change', calculateOrderCost);
     transportField.addEventListener('change', calculateOrderCost);
-
     fetchOrdersFromApi();
 };
