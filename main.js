@@ -14,26 +14,24 @@ const HOLIDAYS = [
 ]; 
 
 const orderModal = document.getElementById('orderModal');
-const dateField = orderModal.querySelector('#date');
-const timeField = orderModal.querySelector('#startTime');
-const durationField = orderModal.querySelector('#orderDuration');
-const personsField = orderModal.querySelector('#personsCount');
-const priceField = orderModal.querySelector('#price');
-const studentField = orderModal.querySelector('#isStudent');
-const transportField = orderModal.querySelector('#isTransport');
+let dateField = orderModal.querySelector('#date');
+let timeField = orderModal.querySelector('#startTime');
+let durationField = orderModal.querySelector('#orderDuration');
+let personsField = orderModal.querySelector('#personsCount');
+let priceField = orderModal.querySelector('#price');
+let studentField = orderModal.querySelector('#isStudent');
+let transportField = orderModal.querySelector('#isTransport');
 
 
 function isThisDayOff(dateString) { // высчитывает день недели
     let date = new Date(dateString);
     let day = date.getDay();
     let MonthDay = (date.getMonth() + 1) + '-' + date.getDate();
-    if (day === 0 || day === 6) { // 0 - воскресенье, 6 - суббота
+    if (day === 0 || day === 6 || HOLIDAYS.includes(MonthDay)) {
         return 1.5; 
-    } else if (holidaysArray.includes(MonthDay)) {
-        return 1.5;
-    } else {
-        return 1;
     }
+
+    return 1;
 }
 
 function getTimeExtra(startTime) { // высчитывает время начала
@@ -54,9 +52,14 @@ function calculateCost(guideCost, duration, date, startTime,
     let price = guideCost * duration * isThisDayOff(date);
     price += personsNumber > 5 && personsNumber <= 10 ? 1000 : 0;
     price += personsNumber > 10 && personsNumber <= 20 ? 1500 : 0;
-    price *= transport &&  (isThisDayOff(date) == 1.5) ? 1.25 : 1.3;
+    if (transport && (isThisDayOff(date) == 1.5)){
+        price *= 1.25;
+    } else if (transport && (isThisDayOff(date) == 1)){
+        price *= 1.3;
+    }
     price *= students ? 0.85 : 1;
     return Math.floor(price);
+
 }
 
 function calculateOrderCost() { // выводит общую сумму
@@ -77,7 +80,8 @@ function calculateOrderCost() { // выводит общую сумму
 }
 
 function clearRoutesTable() {// очистка таблицы с маршрутами
-    document.getElementById('routesTableBody').innerHTML = '';
+    const tableBody = document.getElementById('routesTableBody');
+    tableBody.innerHTML = '';
 }
 
 function addRoutesToTable(routes) { // загрузка таблицы с маршрутами
@@ -91,38 +95,10 @@ function addRoutesToTable(routes) { // загрузка таблицы с мар
 
         const selectButton = document.createElement('button');
         selectButton.innerText = 'Выбрать';
+        selectButton.classList.add("my-btn");
         selectButton.addEventListener('click', () => guideDownload(route));
         row.insertCell(3).appendChild(selectButton);
     });
-}
-
-function highlightSearchResult(searchKeyword) {// поиск и выделение в маршрутах
-    const tableBody = document.getElementById('routesTableBody');
-    const rows = tableBody.getElementsByTagName('tr');
-  
-    for (let i = 0; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName('td');
-        const nameCell = cells[0];
-
-        const cellValue = nameCell.innerText;
-
-        const lowerCaseCellValue = cellValue.toLowerCase();
-        const lowerCaseSearchKeyword = searchKeyword.toLowerCase();
-  
-        if (lowerCaseCellValue.includes(lowerCaseSearchKeyword)) {
-            const startIndex = lowerCaseCellValue.indexOf(
-                lowerCaseSearchKeyword
-            );
-
-            const endIndex = startIndex + searchKeyword.length;
-  
-            const highlightedText = cellValue.substring(0, startIndex) +
-          `<span class="search-highlight">${cellValue.substring(startIndex, endIndex)}</span>` +
-            cellValue.substring(endIndex);
-  
-            nameCell.innerHTML = highlightedText;
-        }
-    }
 }
 
 function searchRoutes() {// поиск и выделение в маршрутах на основе чекбокса и строки в таблице маршрутов(пока нигде не вызывается)
@@ -141,7 +117,7 @@ function searchRoutes() {// поиск и выделение в маршрута
     clearRoutesTable();
     addRoutesToTable(limitedRoutes);
     updatePaginationAfterSearch(filteredRoutes);
-    highlightSearchResult(searchKeyword);
+
 }
   
 function resetSearch() {// сброс параметров поиска таблицы маршрутов(пока нигде не вызывается)
@@ -155,7 +131,7 @@ function getoptionforselect(q) {// удаляет из массива все п�
     return [... new Set(q)];    
 }
 
-function clearLanguageOptions(selectElement) {// отвечает за чекбокс с языками экскурсии
+function clearLanguageOptions(selectElement) {// отвечает за удаление из чекбокса с языками экскурсии
     const select = document.getElementById('selectedLanguge');
     select.innerHTML = '';
 
@@ -165,7 +141,7 @@ function clearLanguageOptions(selectElement) {// отвечает за чекб�
     select.appendChild(option);
 }
 
-function updateLanguageSelect(languages) {// отвечает за чекбокс с языками экскурсии
+function updateLanguageSelect(languages) {// отвечает за обновление чекбокса с языками экскурсии
     const select = document.getElementById('selectedLanguge');
     for (let i in languages) {
         const option = document.createElement('option');
@@ -204,7 +180,7 @@ function guideDownload(route) { // загрузка таблицы с гидам
                 selectButton.setAttribute('data-bs-toggle', 'modal');
                 selectButton.setAttribute('data-bs-target', '#orderModal');
                 selectButton.textContent = 'Выбрать';
-
+                selectButton.classList.add("my-btn");
                 selectButton.addEventListener('click', () => {
                     setModalWindow(route, item);
                 });
@@ -234,7 +210,6 @@ function guideOptions() {// фильтрует таблицу гидов
     let list = document.querySelectorAll('#guideTable tr');
     let from = Number(document.getElementById('guideFromExperiense').value);
     let to = Number(document.getElementById('guideToExperiense').value);
-
     const selectedLanguage = document.getElementById('selectedLanguge');
     for (let i in list) {
         if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
@@ -273,11 +248,10 @@ function setModalWindow(route, guide) {// установка окна заявк
         formData.append("optionFirst", Number(studentField.checked));
         formData.append("optionSecond", Number(transportField.checked));
 
-        const price = calculateOrderCost();
+        let price = calculateOrderCost();
 
         formData.append("price", price);
 
-        console.log(formData);
 
         const requestOptions = {
             method: 'POST',
@@ -291,18 +265,6 @@ function setModalWindow(route, guide) {// установка окна заявк
         ).then(response => response.json()); 
 
     };
-}
-
-function fetchRoutesFromApi() {// получает данные из api о маршрутах
-    fetch(
-        `${HOST}/api/routes?api_key=${API_KEY}`
-    )
-        .then(response => response.json())
-        .then(data => {
-            routesData = data;
-            updateTable();
-        })
-        .catch(error => console.error('Error fetching route data:', error));
 }
 
 function updateTable() { // управляет обновлением и отображением данных о маршрутах
@@ -329,12 +291,24 @@ function handlePageClick(pageNumber) {// вызывает разные знач�
     updateTable();
 }
 
-function createPaginationItem(text, pageNumber) {
+function fetchRoutesFromApi() {// получает данные из api о маршрутах
+    fetch(
+        `${HOST}/api/routes?api_key=${API_KEY}`
+    )
+        .then(response => response.json())
+        .then(data => {
+            routesData = data;
+            updateTable();
+        })
+        .catch(error => console.error('Error fetching route data:', error));
+}
+
+function createPaginationItem(text, pageNumber) {// создает строку с номерами для пагинации
     const pageItem = document.createElement('li');
-    pageItem.className = 'page-item';
+    pageItem.className = 'page-item my-pagination';
   
     const pageLink = document.createElement('a');
-    pageLink.className = 'page-link';
+    pageLink.className = 'page-link my-link';
     pageLink.href = 'javascript:void(0)';
     pageLink.innerText = text;
   
@@ -368,7 +342,7 @@ function updatePaginationAfterSearch(filteredRoutes) {// обновляет эл
   
     paginationElement.innerHTML = '';
   
-    const prevItem = createPaginationItem('Previous', currentPage - 1);
+    const prevItem = createPaginationItem('Назад', currentPage - 1);
     paginationElement.appendChild(prevItem);
   
     for (let i = 1; i <= totalPages; i++) {
@@ -376,7 +350,7 @@ function updatePaginationAfterSearch(filteredRoutes) {// обновляет эл
         paginationElement.appendChild(pageItem);
     }
   
-    const nextItem = createPaginationItem('Next', currentPage + 1);
+    const nextItem = createPaginationItem('Вперед', currentPage + 1);
     paginationElement.appendChild(nextItem);
 }
   
@@ -388,7 +362,7 @@ function updatePagination() {// обновлении таблицы на осн�
   
     paginationElement.innerHTML = '';
   
-    const prevItem = createPaginationItem('Previous', currentPage - 1);
+    const prevItem = createPaginationItem('Назад', currentPage - 1);
     paginationElement.appendChild(prevItem);
   
     for (let i = 1; i <= totalPages; i++) {
@@ -396,7 +370,7 @@ function updatePagination() {// обновлении таблицы на осн�
         paginationElement.appendChild(pageItem);
     }
   
-    const nextItem = createPaginationItem('Next', currentPage + 1);
+    const nextItem = createPaginationItem('Вперед', currentPage + 1);
     paginationElement.appendChild(nextItem);
 }  
 
